@@ -1,4 +1,5 @@
 from whisper import load_model
+from langchain_ollama import OllamaLLM
 import os
 import csv
 import numpy as np
@@ -94,6 +95,14 @@ def transcribe_media(whisper_folder, media_filename, model, model_name):
         print(f"CSV: {csv_path}")
         print(f"Text: {txt_path}")
 
+        # make summary
+        print("Generating summary file...")
+        file = open(txt_path, "r")
+        text_to_summarize = file.read()
+        llm = OllamaLLM(model="llama3.2")
+        response = llm.invoke("Can you summarize this audio transcript, making sure to call out key points with time stamps?:" + text_to_summarize)
+        print(response)
+
     except Exception as e:
         print(f"An error occurred while processing {media_filename}: {str(e)}")
 
@@ -113,7 +122,7 @@ def process_all_media_files():
 
     os.chdir(whisper_folder)
 
-    media_files = [f for f in os.listdir(whisper_folder) if is_valid_file(f)]-
+    media_files = [f for f in os.listdir(whisper_folder) if is_valid_file(f)]
     if not os.path.exists(whisper_folder) or len(media_files) == 0:
         print("No valid audio or video files found in the Whisper folder.")
         return
