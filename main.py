@@ -4,12 +4,7 @@ import csv
 import numpy as np
 import librosa
 import warnings
-
-# Suppress warnings
-warnings.filterwarnings("ignore")
-
-def get_whisper_folder():
-    return os.path.abspath(os.path.dirname(__file__))
+import sys
 
 def is_valid_file(filename):
     valid_extensions = ['.mp3', '.wav', '.m4a', '.flac', '.ogg', '.aac', '.mp4']
@@ -37,8 +32,7 @@ def detect_pauses(audio_path, min_pause_duration=0.5):
    
     return pauses
 
-def transcribe_media(media_filename, model, model_name):
-    whisper_folder = get_whisper_folder()
+def transcribe_media(whisper_folder, media_filename, model, model_name):
     media_path = os.path.join(whisper_folder, media_filename)
 
     try:
@@ -111,24 +105,28 @@ def get_model_choice():
         print("Invalid choice. Please enter 'base', 'small', 'medium', or 'large'.")
 
 def process_all_media_files():
-    whisper_folder = get_whisper_folder()
+    if len(sys.argv) != 2:
+        whisper_folder = os.getcwd()
+        print("Defaulting to current directory - please enter another directory if you would like to transcribe from somewhere else.")
+    else:
+        whisper_folder = sys.argv[1]
+
     os.chdir(whisper_folder)
-   
+
+    media_files = [f for f in os.listdir(whisper_folder) if is_valid_file(f)]-
+    if not os.path.exists(whisper_folder) or len(media_files) == 0:
+        print("No valid audio or video files found in the Whisper folder.")
+        return
+
+    print(f"Found {len(media_files)} valid file(s). Starting transcription process...")
+
     model_name = get_model_choice()
    
     print(f"Loading Whisper {model_name} model...")
     model = load_model(model_name)
-   
-    media_files = [f for f in os.listdir(whisper_folder) if is_valid_file(f)]
-   
-    if not media_files:
-        print("No valid audio or video files found in the Whisper folder.")
-        return
-   
-    print(f"Found {len(media_files)} valid file(s). Starting transcription process...")
-   
+
     for media_file in media_files:
-        transcribe_media(media_file, model, model_name)
+        transcribe_media(whisper_folder, media_file, model, model_name)
    
     print("All transcriptions completed.")
 
